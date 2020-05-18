@@ -47,7 +47,11 @@ we provide methods for generating statistical analysis of all site data saved wi
 
 we provide templates for evaluating different approaches of using prophet at individual sites. These include using different historical intervals for model fitting and changing the weight of changepoints detected in the fitting process etc. Again please change the data locations according to your needs.
 
-In the Traffic_Data I have seperated the traffic volume data provided by local transport authorities, and the use of said data in fitting the Prophet model. In the current instance, this includes fitting the model to predict inferred pollutant/traffic volume and then using the same traffic volume data to predict actual concentrations of pollutants. This is because adding traffic data, directly, as an additional regressor to the vanilla model does not improve performance. This is because any traffic apportionment to the measured pollutant signal is already captured in the seasonality displayed in the data. 
+In the Traffic_Data I have seperated the traffic volume data provided by local transport authorities, and the use of said data in fitting the Prophet model. In the current instance, this includes fitting the model to predict inferred pollutant/traffic volume and then using the same traffic volume data to predict actual concentrations of pollutants. This is because adding traffic data, directly, as an additional regressor to the vanilla model does not improve performance. This is because any traffic apportionment to the measured pollutant signal is already captured in the seasonality displayed in the data. For example, in the Python file
+
+- Single_site_combined_Piccadilly.py
+
+I import the traffic data relevant to the AURN site in Manchester Piccadilly and then create a merged dataframe to perform Prophet model fitting.
 
 ## Contributing<a name="Contributing"></a>
 
