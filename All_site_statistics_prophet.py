@@ -49,7 +49,9 @@ from scipy import stats
 
 #################################################################################
 # Where did you save your output from the Cross Validation fits?
-prophet_analysis_path = "/AURN_prophet_analysis"
+#prophet_analysis_path = "/AURN_prophet_analysis"
+
+prophet_analysis_path= 'C:/Users/Dave/Documents/Code/AURN_prophet_analysis'
 #Path(prophet_analysis_path).mkdir(parents=True, exist_ok=True)
 
 meta_data_url = "https://uk-air.defra.gov.uk/openair/R_data/AURN_metadata.RData"
@@ -70,13 +72,14 @@ metadata = pyreadr.read_r(meata_data_filename)
 # place during the Prophet fitting process
 # Nonetheless we can still choose to look at individual authorities
 
-manual_selection = False
+manual_selection = True
 save_to_csv = False
 site_data_dict=dict()
 site_data_dict_name=dict()
+diurnal_plot = True
 
 if manual_selection is True:
-    list_authorities = ['Manchester']
+    list_authorities = ['Manchester','Bristol, City of','Westminster','Salford']
 else:
     list_authorities = metadata['AURN_metadata'].local_authority.unique()
 
@@ -89,6 +92,9 @@ mean_percen=[]
 outside_error_list=[]
 R_list=[]
 inside_uncertainty=[]
+KS_list=[]
+
+append_step=1
 
 for local_authority in list_authorities:
 
@@ -147,23 +153,93 @@ for local_authority in list_authorities:
                 mean_percen.append(site_forecast_data_percen[station_name].mean())
                 site_type_list.append(metadata['AURN_metadata'][metadata['AURN_metadata'].site_id == site].location_type.values[0])
 
+                # Produce a comparative dirunal profile?
+                if diurnal_plot is True:
+
+                    #print("plotting dirunal profile for ", textstr)
+                    #pdb.set_trace()
+
+                    site_forecast_data['datetime'] = pd.to_datetime(site_forecast_data['ds'])
+                    #final_dataframe =final_dataframe.sort_values(by='datetime',ascending=True)
+                    site_forecast_data=site_forecast_data.set_index('datetime')
+
+                    measured =pd.DataFrame(site_forecast_data['y'])
+                    mask = (measured.index.year > 100)
+                    measured['Measured']=mask
+                    predicted = pd.DataFrame(site_forecast_data['yhat'])
+                    predicted=predicted.rename(columns={"yhat": "y"})
+                    mask = (predicted.index.year < 100)
+                    predicted['Measured']=mask
+                    new_dataframe = pd.concat([measured, predicted])
+
+                    # Lets also include the upper and lower limits?
+                    predicted_lower = pd.DataFrame(site_forecast_data['yhat_lower'])
+                    predicted_lower=predicted_lower.rename(columns={"yhat_lower": "y"})
+                    predicted_lower['Measured']=mask
+                    predicted_upper= pd.DataFrame(site_forecast_data['yhat_upper'])
+                    predicted_upper=predicted_upper.rename(columns={"yhat_upper": "y"})
+                    predicted_upper['Measured']=mask
+                    frames=[measured,predicted,predicted_lower,predicted_upper]
+                    new_dataframe_all = pd.concat(frames)
+
+                    #pdb.set_trace()
+
+                    f, ax = plt.subplots(1,1,figsize=(15, 10))
+                    plt.text(0.02, 0.9, textstr, fontsize=12, transform=plt.gcf().transFigure)
+                    sns.boxplot(data=new_dataframe,x=new_dataframe.index.hour, y=new_dataframe['y'],hue='Measured').set(xlabel='Hour of day',ylabel='Abundance')
+                    plt.savefig(data_path+station_name+"-Diurnal_comparison.png")
+                    plt.close('all')
+
+                    f, ax = plt.subplots(1,1,figsize=(15, 10))
+                    plt.text(0.02, 0.9, textstr, fontsize=12, transform=plt.gcf().transFigure)
+                    sns.boxplot(data=new_dataframe_all,x=new_dataframe_all.index.hour, y=new_dataframe_all['y'],hue='Measured').set(xlabel='Hour of day',ylabel='Abundance')
+                    plt.savefig(data_path+station_name+"-Diurnal_comparison_all.png")
+                    plt.close('all')
+
             except:
                 print("Problem with ", station_name)
 
+#pdb.set_trace()
 # Define a set of colours for visualising performance by AURN site type [Urban Background, Rural etc..]
 colour_list=['tab:green','tab:red','tab:cyan','tab:grey','tab:orange','tab:purple']
 sns.set(font_scale=1.5)
+#Create a dictionary of site type colours
+colour_dict={
+    'Urban Traffic':'tab:red',
+    'Urban Industrial':'tab:grey',
+    'Urban Background':'tab:purple',
+    'Suburban Industrial':'tab:cyan',
+    'Suburban Background':'tab:orange',
+    'Rural Background':'tab:green'
+}
+
+
+###############################################################################
+data_tuple = list(zip(KS_list,mean_deviation,site_type_list))
+KS_data = pd.DataFrame(data_tuple, columns=['KS','Mean Deviation','site type'])
+# Plot the mean deviation as a function of site type
+#fig = plt.figure(figsize=(10, 8))
+sns.lmplot(x="Mean Deviation", y="KS", hue="site type", fit_reg=False, data=KS_data, palette=colour_dict)
+#plt.legend(prop={'size': 12})
+#plt.title('Mean Deviation for site types')
+plt.xlabel('Mean Deviation')
+plt.ylabel('Kolmogorov–Smirnov value')
+plt.legend(loc='lower right')
+plt.show()
+pdb.set_trace()
+plt.close('all')
 
 ################################################################################
 # Now turn the mean deviation data into a dataframe
 data_tuple = list(zip(mean_deviation,site_type_list))
 mean_data = pd.DataFrame(data_tuple, columns=['Mean Deviation','site type'])
 # Plot the mean deviation as a function of site type
-fig = plt.figure(figsize=(20, 10))
+fig = plt.figure(figsize=(10, 8))
 colour_step=0
 for entry in mean_data['site type'].unique():
     df = mean_data[mean_data['site type'] == entry]
-    sns.distplot(df['Mean Deviation'], hist = True, kde = True, label=entry,color=colour_list[colour_step])
+    #sns.distplot(df['Mean Deviation'], hist = True, kde = True, label=entry,color=colour_dict[entry])
+    sns.kdeplot(df['Mean Deviation'], label=entry,color=colour_dict[entry],linewidth=3)
     colour_step+=1
 # Plot formatting
 plt.legend(prop={'size': 12})
@@ -182,11 +258,12 @@ mean_data_percen = pd.DataFrame(data_tuple2, columns=['% Deviation','site type']
 mean_data_percen=mean_data_percen.replace([np.inf, -np.inf], np.nan)
 mean_data_percen=mean_data_percen.dropna()
 # Plot the mean deviation as a function of site type
-fig = plt.figure(figsize=(20, 10))
+fig = plt.figure(figsize=(10, 8))
 colour_step=0
 for entry in mean_data_percen['site type'].unique():
     df = mean_data_percen[mean_data_percen['site type'] == entry]
-    sns.distplot(df['% Deviation'], hist = True, kde = True, label=entry,color=colour_list[colour_step])
+    #sns.distplot(df['% Deviation'], hist = True, kde = True, label=entry,color=colour_list[colour_step])
+    sns.kdeplot(df['% Deviation'], label=entry,color=colour_dict[entry],linewidth=3)
     colour_step+=1
 # Plot formatting
 plt.legend(prop={'size': 12})
@@ -206,11 +283,12 @@ mean_data_percen = pd.DataFrame(data_tuple2, columns=['% Deviation','site type']
 mean_data_percen=mean_data_percen.replace([np.inf, -np.inf], np.nan)
 mean_data_percen=mean_data_percen.dropna()
 # Plot the mean deviation as a function of site type
-fig = plt.figure(figsize=(20, 10))
+fig = plt.figure(figsize=(10, 8))
 colour_step=0
 for entry in mean_data_percen['site type'].unique():
     df = mean_data_percen[mean_data_percen['site type'] == entry]
-    sns.distplot(df['% Deviation'], hist = True, kde = True, label=entry,color=colour_list[colour_step])
+    #sns.distplot(df['% Deviation'], hist = True, kde = True, label=entry,color=colour_list[colour_step])
+    sns.kdeplot(df['% Deviation'], label=entry,color=colour_dict[entry],linewidth=3)
     colour_step+=1
 # Plot formatting
 plt.legend(prop={'size': 12})
@@ -228,11 +306,12 @@ plt.close('all')
 data_tuple4 = list(zip(R_list,site_type_list))
 R_list_data = pd.DataFrame(data_tuple4, columns=['Corr','site type'])
 # Plot the distribution of R as a function of site type
-fig = plt.figure(figsize=(20, 10))
+fig = plt.figure(figsize=(10, 8))
 colour_step=0
 for entry in R_list_data['site type'].unique():
     df = R_list_data[R_list_data['site type'] == entry]
-    sns.distplot(df['Corr'], hist = True, kde = True, label=entry,color=colour_list[colour_step])
+    #sns.distplot(df['Corr'], hist = True, kde = True, label=entry,color=colour_list[colour_step])
+    sns.kdeplot(df['Corr'], label=entry,color=colour_dict[entry],linewidth=3)
     colour_step+=1
 # Plot formatting
 plt.legend(prop={'size': 12})
@@ -249,11 +328,12 @@ plt.close('all')
 data_tuple5 = list(zip(inside_uncertainty,site_type_list))
 inbounds_list_data = pd.DataFrame(data_tuple5, columns=['%','site type'])
 # Plot the mean deviation as a function of site type
-fig = plt.figure(figsize=(20, 10))
+fig = plt.figure(figsize=(10, 8))
 colour_step=0
 for entry in inbounds_list_data['site type'].unique():
     df = inbounds_list_data[inbounds_list_data['site type'] == entry]
-    sns.distplot(df['%'], hist = True, kde = True, label=entry,color=colour_list[colour_step])
+    #sns.distplot(df['%'], hist = True, kde = True, label=entry,color=colour_list[colour_step])
+    sns.kdeplot(df['%'], label=entry,color=colour_dict[entry],linewidth=3)
     colour_step+=1
 # Plot formatting
 plt.legend(prop={'size': 12})

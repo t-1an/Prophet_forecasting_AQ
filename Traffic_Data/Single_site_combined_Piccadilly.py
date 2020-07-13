@@ -41,6 +41,7 @@ from fbprophet.diagnostics import performance_metrics
 from fbprophet.plot import plot_cross_validation_metric
 import datetime
 from pathlib import Path
+from windrose import WindroseAxes
 
 # In this file we first pull all of the data from the DEFRA portal before fitting
 # prophet models to each site. This is currently the same as a seperate Script
@@ -394,23 +395,63 @@ pro_regressor.fit(train_X)
 forecast_data = pro_regressor.predict(test_X)
 
 # Plot the actual data with forecast NO2 AND NO2 from log(NO2/volume) fits
-fig =pro_regressor.plot(forecast_data, uncertainty=True,figsize=(15, 8))
-axes = fig.get_axes()
-plt.plot(train_dataset.loc[mask_reg2]['ds'], train_dataset.loc[mask_reg2]['y'], color='r', label='actual NO2')
-plt.plot(forecast_data2['ds'], forecast_data2['NO2 from volume'], color='g', label='NO2 using traffic data')
+fig =pro_regressor.plot(forecast_data, uncertainty=True,figsize=(15, 5), xlabel='Date', ylabel=r'NO2 $\mu g.m^{-3}$')
+plt.plot(train_dataset.loc[mask_reg2]['ds'], train_dataset.loc[mask_reg2]['y'], color='r', label='Measured')
+plt.plot(forecast_data['ds'], forecast_data['yhat'], color='tab:blue', label='Forecast')
+plt.plot(forecast_data2['ds'], forecast_data2['NO2 from volume'], color='g', label='Forecast using traffic data')
 #plt.plot(forecast_data2['ds'], forecast_data2['NO2 from volume upper'], color='g',linestyle='--')
 #plt.plot(forecast_data2['ds'], forecast_data2['NO2 from volume lower'], color='g',linestyle='--')
 #plt.fill_between(forecast_data2['ds'], forecast_data2['NO2 from volume lower'], forecast_data2['NO2 from volume upper'], color='green', alpha=0.1)
 ax = fig.gca()
 ax.set_xlim([datetime.date(2020, 2, 28), datetime.date(2020, 5, 10)])
 ax.set_ylim([0, 120])
-plt.title('Validation data v. forecast ')
-axes[0].set_xlabel('Date')
-axes[0].set_ylabel('NO2 ')
-plt.legend();
+ax.set_xlabel("Date", size=14)
+ax.set_ylabel(r'NO2 $\mu g.m^{-3}$', size=14)
+ax.tick_params(axis="x", labelsize=14)
+ax.tick_params(axis="y", labelsize=14)
+#plt.title('Validation data v. forecast ')
+plt.legend(prop={"size":14});
 plt.show()
 plt.close('all')
 
+# Calculate the % deviation from the predictions based on traffic
+forecast_data2['% deviation']=(forecast_data2['NO2 from volume'].values-forecast_data['yhat'].values)/(forecast_data['yhat'].values)*100.0
+mask_reg4 = (forecast_data2.ds >= '2020-3-25')
+
+# Create a windrose plot showing where largest deviations occur
+#fig = plt.figure(figsize=(15, 10), projection='windrose')
+ax = WindroseAxes.from_ax()
+ax.bar(train_dataset2.loc[mask_reg3b]['Modelled Wind Direction'].values, forecast_data2.loc[mask_reg4]['% deviation'].values)
+ax.set_legend()
+ax.legend(title='% Deviation',loc='upper left')
+plt.show()
+
 pdb.set_trace()
 
-# create another plot but focused on the bounda of the traffic forecast
+# Create a boxplot looking at measured, forecast with and without traffic
+# To do this we are going to concatenate vertically
+forecast_normal_df = forecast_data[['ds','yhat']]
+forecast_normal_new_df = forecast_normal_df.copy()
+forecast_normal_new_df['label'] = 'Forecast'
+forecast_normal_new_df=forecast_normal_new_df.rename(columns={"yhat": "y"})
+forecast_traffic_df = forecast_data2[['ds','NO2 from volume']]
+forecast_traffic_new_df = forecast_traffic_df.copy()
+forecast_traffic_new_df['label'] = 'Forecast using traffic data'
+forecast_traffic_new_df=forecast_traffic_new_df.rename(columns={"NO2 from volume": "y"})
+measured_df = train_dataset.loc[mask_reg2][['ds','y']]
+measured_new_df = measured_df.copy()
+measured_new_df['label'] = 'Measured'
+vertical_stack = pd.concat([forecast_normal_new_df, forecast_traffic_new_df], axis=0)
+vertical_stack = pd.concat([vertical_stack, measured_new_df], axis=0)
+vertical_stack['ds']=pd.to_datetime(vertical_stack['ds'])
+vertical_stack=vertical_stack.set_index('ds')
+# Now set the index to be the datetime
+f, ax = plt.subplots(1,1,figsize=(12, 5))
+sns.boxplot(data=vertical_stack,x=vertical_stack.index.hour, y=vertical_stack['y'],hue='label')
+ax.set_xlabel("Hour", size=14)
+ax.set_ylabel(r'NO2 $\mu g.m^{-3}$', size=14)
+ax.tick_params(axis="x", labelsize=14)
+ax.tick_params(axis="y", labelsize=14)
+#plt.title('Validation data v. forecast ')
+plt.legend(prop={"size":14});
+plt.show()

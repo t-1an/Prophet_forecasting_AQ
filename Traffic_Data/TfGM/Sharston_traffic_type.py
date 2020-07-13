@@ -38,6 +38,7 @@ metadata = pd.read_csv('GM_JOURNEY_TIME_sites.csv')
 
 frame_traff['datetime'] = pd.to_datetime(frame_traff['Sdate'])
 frame_traff = frame_traff.sort_values(by='datetime',ascending=True)
+#pdb.set_trace()
 frame_traff=frame_traff.set_index('datetime')
 frame_traff=frame_traff.resample('60Min').sum()
 
@@ -53,8 +54,16 @@ frame_traff['lockdown'] = mask_lockdown
 
 ################################################################################
 # ---------------------Diurnal Profile Ratio of HGV ----------------------------
-fig = plt.figure(figsize=(15, 10))
+f, ax = plt.subplots(1,1,figsize=(12, 5))
 sns.boxplot(data=frame_traff,x=frame_traff.index.hour, y=frame_traff['HGV_ratio'],hue='lockdown').set(xlabel='Hour of day',ylabel='HGV ratio')
+ax.set_xlabel("Hour", size=14)
+ax.set_ylabel(r'HGV ratio', size=14)
+ax.tick_params(axis="x", labelsize=14)
+ax.tick_params(axis="y", labelsize=14)
+#ax.set_ylim([0, 60])
+#plt.title('Validation data v. forecast ')
+plt.legend(prop={"size":14});
+plt.show()
 plt.show()
 ################################################################################
 
@@ -63,8 +72,13 @@ plt.show()
 f, ax = plt.subplots(2,1,figsize=(15, 10))
 sns.boxplot(data=frame_traff,x=frame_traff.index.hour, y=frame_traff['Class4Volume'],hue='lockdown', ax=ax[0]).set(xlabel='Hour of day',ylabel='HGV numbers')
 sns.boxplot(data=frame_traff,x=frame_traff.index.hour, y=frame_traff['non HGV'],hue='lockdown', ax=ax[1]).set(xlabel='Hour of day',ylabel='non HGV numbers')
+ax[1].set_xlabel("Hour", size=14)
+ax[1].set_ylabel(r'non HGV volume', size=14)
+ax[0].set_xlabel("Hour", size=14)
+ax[0].set_ylabel(r'HGV volume', size=14)
+ax[1].tick_params(axis="x", labelsize=14)
+ax[1].tick_params(axis="y", labelsize=14)
+ax[0].tick_params(axis="x", labelsize=14)
+ax[0].tick_params(axis="y", labelsize=14)
 plt.show()
 ################################################################################
-
-
-pdb.set_trace()
