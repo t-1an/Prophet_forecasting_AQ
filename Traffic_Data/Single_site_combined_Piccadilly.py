@@ -333,7 +333,7 @@ ax[0].set(xlabel='Date', ylabel="Traffic Volume [per hour]")
 plt.show()
 plt.close('all')
 
-pdb.set_trace()
+#pdb.set_trace()
 
 
 # Mask to look at typical diurnal profiles before COVID19 lockdown
@@ -344,7 +344,7 @@ sns.boxplot(x=combined_df.loc[mask_pre_lockdown].index.hour, y=combined_df.loc[m
 sns.boxplot(x=combined_df.loc[mask_pre_lockdown].index.hour, y=combined_df.loc[mask_pre_lockdown]['log NO2 per Volume'],ax=ax[2])
 plt.show()
 plt.close('all')
-pdb.set_trace()
+#pdb.set_trace()
 
 # Now produce a set of two combined box-plots according to March before 2020 and for 2020
 mask_tag = (combined_df.index.month == 4) & (combined_df.index > '2019-12-30')
@@ -361,7 +361,7 @@ ax[1].tick_params(axis='x', which='both', bottom='off',labelbottom='off')
 ax[2].tick_params(axis='x', which='both', bottom='off',labelbottom='off')
 plt.show()
 plt.close('all')
-pdb.set_trace()
+#pdb.set_trace()
 
 
 ######################  Train a Prophet instance to the NO2 per volume ###########################
@@ -420,7 +420,7 @@ plt.title('Validation data v. forecast - log NO2 / Traffic volume')
 plt.legend();
 plt.show()
 plt.close('all')
-pdb.set_trace()
+#pdb.set_trace()
 #########################################################################################
 
 ###########  Train to the NO2, as per our standard Propher use  #########################
@@ -494,10 +494,14 @@ ax.set_legend()
 ax.legend(title='% Deviation',loc='upper left')
 plt.show()
 
-pdb.set_trace()
+#pdb.set_trace()
 
 # Create a boxplot looking at measured, forecast with and without traffic
 # To do this we are going to concatenate vertically
+
+colour_dict={'Forecast':'tab:blue','Forecast using traffic data':'tab:green','Measured':'tab:red','EMEP':'tab:cyan'}
+
+
 forecast_normal_df = forecast_data[['ds','yhat']]
 forecast_normal_new_df = forecast_normal_df.copy()
 forecast_normal_new_df['label'] = 'Forecast'
@@ -525,7 +529,7 @@ vertical_stack['ds']=pd.to_datetime(vertical_stack['ds'])
 vertical_stack=vertical_stack.set_index('ds')
 # Now set the index to be the datetime
 f, ax = plt.subplots(1,1,figsize=(12, 5))
-sns.boxplot(data=vertical_stack,x=vertical_stack.index.hour, y=vertical_stack['y'],hue='label')
+sns.boxplot(data=vertical_stack,x=vertical_stack.index.hour, y=vertical_stack['y'],hue='label',palette=colour_dict)
 ax.set_xlabel("Hour", size=14)
 ax.set_ylabel(r'NO2 $\mu g.m^{-3}$', size=14)
 ax.tick_params(axis="x", labelsize=14)

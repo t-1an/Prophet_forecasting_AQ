@@ -41,6 +41,9 @@ from fbprophet.diagnostics import performance_metrics
 from fbprophet.plot import plot_cross_validation_metric
 import datetime
 from windrose import WindroseAxes
+import os
+
+script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
 
 # In this file we first pull all of the data from the DEFRA portal before fitting
 # prophet models to each site. This is currently the same as a seperate Script
@@ -72,10 +75,68 @@ else:
 # Read the RData file into a Pandas dataframe
 metadata = pyreadr.read_r(meata_data_filename)
 
+# This example loads in some EMEP forecasts for comparison with historical and
+# COVID forecasts.
+emep_path1 = "EMEP_data/emep_prophet_NO2_data_MarAprMay2020.csv"
+abs_file_path_emep1 = os.path.join(script_dir, emep_path1)
+emep_path2 = "EMEP_data/emep_prophet_NO2_data_2016_2017_2019.csv"
+abs_file_path_emep2 = os.path.join(script_dir, emep_path2)
+
+emep_data=pd.read_csv(abs_file_path_emep1)
+emep_data['datetime'] = pd.to_datetime(emep_data['Unnamed: 0'])
+emep_data = emep_data.sort_values(by='datetime',ascending=True)
+emep_data=emep_data.set_index('datetime')
+# Using the conversion factor to go from ppb to micrograms: https://uk-air.defra.gov.uk/assets/documents/reports/cat06/0502160851_Conversion_Factors_Between_ppb_and.pdf
+emep_data['Sharston NO2']=emep_data['Manchester Sharston [AQ]']*1.9125
 # In the following we now download the data. Here we have a number of options
 # - Specify the years to download data for
 # - Specify the local authority[ies] to download data for
 # - Download data for all authorities
+
+compare_EMEP_prophet = True
+if compare_EMEP_prophet is True:
+    file_path = prophet_analysis_path+'/Manchester'+"/"+'Manchester Sharston-forecast_30days_cp.csv'
+    Prophet_cv_data = pd.read_csv(file_path)
+    EMEP_historical = pd.read_csv(abs_file_path_emep2)
+    EMEP_historical=EMEP_historical.replace([np.inf, -np.inf], np.nan)
+    EMEP_historical.dropna(inplace=True)
+
+    EMEP_historical['datetime'] = pd.to_datetime(EMEP_historical['Unnamed: 0'])
+    EMEP_historical['Shars NO2']=pd.to_numeric(EMEP_historical['Manchester Sharston [AQ]'])*1.9125
+    EMEP_historical=EMEP_historical.set_index('datetime')
+
+    Prophet_df = Prophet_cv_data[['ds','yhat']]
+    Prophet_new_df = Prophet_df.copy()
+    Prophet_new_df['label'] = 'Forecast'
+    Prophet_new_df=Prophet_new_df.rename(columns={"yhat": "y"})
+
+    measured_df = Prophet_cv_data[['ds','y']]
+    measured_new_df = measured_df.copy()
+    measured_new_df['label'] = 'Measured'
+
+    mask_emep = (EMEP_historical.index >= '2018-1-01')
+    emep_hist_df = EMEP_historical.loc[mask_emep][['Unnamed: 0','Shars NO2']]
+    emep_hist_new_df = emep_hist_df.copy()
+    emep_hist_new_df['label'] = 'EMEP'
+    emep_hist_new_df=emep_hist_new_df.rename(columns={"Shars NO2": "y"})
+    emep_hist_new_df=emep_hist_new_df.rename(columns={"Unnamed: 0": "ds"})
+
+    vertical_stack = pd.concat([Prophet_new_df, measured_new_df], axis=0)
+    vertical_stack = pd.concat([vertical_stack, emep_hist_new_df], axis=0)
+
+    vertical_stack['ds']=pd.to_datetime(vertical_stack['ds'])
+    vertical_stack=vertical_stack.set_index('ds')
+    # Now set the index to be the datetime
+    f, ax = plt.subplots(1,1,figsize=(12, 5))
+    sns.boxplot(data=vertical_stack,x=vertical_stack.index.hour, y=vertical_stack['y'],hue='label')
+    ax.set_xlabel("Hour", size=14)
+    ax.set_ylabel(r'NO2 $\mu g.m^{-3}$', size=14)
+    ax.tick_params(axis="x", labelsize=14)
+    ax.tick_params(axis="y", labelsize=14)
+    #plt.title('Validation data v. forecast ')
+    plt.legend(prop={"size":14});
+    plt.show()
+    plt.close('all')
 
 #pdb.set_trace()
 
@@ -268,7 +329,7 @@ ax[0].set_xlim([datetime.date(2019, 9, 28), datetime.date(2020, 5, 10)])
 ax[0].set(xlabel='Date', ylabel="Traffic Volume [per hour]")
 plt.show()
 plt.close('all')
-pdb.set_trace()
+#pdb.set_trace()
 
 # Mask to look at typical diurnal profiles before COVID19 lockdown
 mask_pre_lockdown = (combined_df.index < '2020-3-23')
@@ -281,7 +342,7 @@ sns.boxplot(x=combined_df.loc[mask_pre_lockdown].index.hour, y=combined_df.loc[m
 sns.boxplot(x=combined_df.loc[mask_pre_lockdown].index.hour, y=combined_df.loc[mask_pre_lockdown]['log NO2 per Volume'],ax=ax[2])
 plt.show()
 plt.close('all')
-pdb.set_trace()
+#pdb.set_trace()
 
 # Now produce a set of two combined box-plots according to March before 2020 and for 2020
 mask_tag = (combined_df.index.month == 4) & (combined_df.index > '2019-12-30')
@@ -298,7 +359,7 @@ ax[1].tick_params(axis='x', which='both', bottom='off',labelbottom='off')
 ax[2].tick_params(axis='x', which='both', bottom='off',labelbottom='off')
 plt.show()
 plt.close('all')
-pdb.set_trace()
+#pdb.set_trace()
 
 
 ######################  Train a Prophet instance to the NO2 per volume ###########################
@@ -357,7 +418,7 @@ plt.title('Validation data v. forecast - log NO2 / Traffic volume')
 plt.legend();
 plt.show()
 plt.close('all')
-pdb.set_trace()
+#pdb.set_trace()
 #########################################################################################
 
 ###########  Train to the NO2, as per our standard Propher use  #########################
@@ -383,6 +444,8 @@ mask_reg1 = (train_dataset.ds < '2020-3-01')
 mask_reg2 = (train_dataset.ds >= '2020-3-01')
 mask_reg3 = (train_dataset.ds >= '2020-3-25')
 mask_future = (train_dataset.ds > '2019-12-01')
+mask_reg2_emep = (emep_data.index >= '2020-3-01')
+
 #train_dataset['Traffic Volume'].loc[mask_reg3] = train_dataset['Traffic Volume'].loc[mask_reg3]*0.4
 
 # Build a regressor [using a changpoint scale inferred from the Cross Validation studies]
@@ -404,6 +467,7 @@ fig =pro_regressor.plot(forecast_data, uncertainty=True,figsize=(15, 5), xlabel=
 plt.plot(train_dataset.loc[mask_reg2]['ds'], train_dataset.loc[mask_reg2]['y'], color='r', label='Measured')
 plt.plot(forecast_data['ds'], forecast_data['yhat'], color='tab:blue', label='Forecast')
 plt.plot(forecast_data2['ds'], forecast_data2['NO2 from volume'], color='g', label='Forecast using traffic data')
+plt.plot(emep_data.loc[mask_reg2_emep].index, emep_data.loc[mask_reg2_emep]['Sharston NO2'], color='c', label='EMEP')
 #plt.plot(forecast_data2['ds'], forecast_data2['NO2 from volume upper'], color='g',linestyle='--')
 #plt.plot(forecast_data2['ds'], forecast_data2['NO2 from volume lower'], color='g',linestyle='--')
 #plt.fill_between(forecast_data2['ds'], forecast_data2['NO2 from volume lower'], forecast_data2['NO2 from volume upper'], color='green', alpha=0.1)
@@ -431,6 +495,9 @@ ax.set_legend()
 ax.legend(title='% Deviation',loc='upper left')
 plt.show()
 
+
+colour_dict={'Forecast':'tab:blue','Forecast using traffic data':'tab:green','Measured':'tab:red','EMEP':'tab:cyan'}
+
 forecast_normal_df = forecast_data[['ds','yhat']]
 forecast_normal_new_df = forecast_normal_df.copy()
 forecast_normal_new_df['label'] = 'Forecast'
@@ -442,13 +509,23 @@ forecast_traffic_new_df=forecast_traffic_new_df.rename(columns={"NO2 from volume
 measured_df = train_dataset.loc[mask_reg2][['ds','y']]
 measured_new_df = measured_df.copy()
 measured_new_df['label'] = 'Measured'
+
+emep_df = emep_data.loc[mask_reg2_emep][['Unnamed: 0','Sharston NO2']]
+emep_df_new_df = emep_df.copy()
+emep_df_new_df['label'] = 'EMEP'
+emep_df_new_df=emep_df_new_df.rename(columns={"Sharston NO2": "y"})
+emep_df_new_df=emep_df_new_df.rename(columns={"Unnamed: 0": "ds"})
+
+
 vertical_stack = pd.concat([forecast_normal_new_df, forecast_traffic_new_df], axis=0)
 vertical_stack = pd.concat([vertical_stack, measured_new_df], axis=0)
+vertical_stack = pd.concat([vertical_stack, emep_df_new_df], axis=0)
+
 vertical_stack['ds']=pd.to_datetime(vertical_stack['ds'])
 vertical_stack=vertical_stack.set_index('ds')
 # Now set the index to be the datetime
 f, ax = plt.subplots(1,1,figsize=(12, 5))
-sns.boxplot(data=vertical_stack,x=vertical_stack.index.hour, y=vertical_stack['y'],hue='label')
+sns.boxplot(data=vertical_stack,x=vertical_stack.index.hour, y=vertical_stack['y'],hue='label',palette=colour_dict)
 ax.set_xlabel("Hour", size=14)
 ax.set_ylabel(r'NO2 $\mu g.m^{-3}$', size=14)
 ax.tick_params(axis="x", labelsize=14)
