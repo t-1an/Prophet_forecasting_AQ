@@ -53,7 +53,7 @@ In the Traffic_Data folder I have seperated the traffic volume data provided by 
 
 - Single_site_combined_Piccadilly.py
 
-I import the traffic data relevant to the AURN site in Manchester Piccadilly and then create a merged dataframe to perform Prophet model fitting. I also include output from the regional model EMEP, supported by Research IT at Manchester University.
+I import the traffic data relevant to the AURN site in Manchester Piccadilly and then create a merged dataframe to perform Prophet model fitting. I also include output from the regional model EMEP, supported by Research IT at Manchester University. Operational scripts for setup of EMEP are available from https://github.com/UoMResearchIT/BB\_EMEP\_Ops.git; and inputs and configuration files are available from https://www.dropbox.com/s/iuoy64zpei3f43i/Britain\_Breathing\_Operational\_Inputs.tar.gz.
 
 ## Contributing<a name="Contributing"></a>
 
