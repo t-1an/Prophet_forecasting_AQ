@@ -3,7 +3,7 @@ Using and evaluating Facebooks's Prophet model for forecasting
 
 <p float="left">
   <img src="images/London Marylebone Road_2year_month_forecast_Hexjoint.png" width="400" />
-  <img src="images/NO2_Picc_prophet.png" width="600" />
+  <img src="images/NO2_Picc_prophet_inc_EMEP.png" width="600" />
 </p>
 
 This repository contains scripts that deploy Facebook's [Prophet](https://facebook.github.io/prophet/docs/quick_start.html) time series forecasting model to predict Air Quality at a number of sites. Originally focused on the UK [Automatic Urban and Rural Network (AURN) network](https://uk-air.defra.gov.uk/networks/network-info?view=aurn), there are options to fit and evaluate the 'vanilla' model across all sites within dates defined by the user. In addition, there are model variants designed to use traffic volume as an additional regressor, as described briefly below.
@@ -23,13 +23,15 @@ This project is licensed under the terms of the GNU General Public License v3.0,
 
 ## Dependencies and installation <a name="Dependencies"></a>
 
-The current scripts were developed in the Anaconda Python 3.8 environment. Installing the Prophet model was not as straight forward as I wouldve hoped, where multiple dependencies had to be manually configured through the Pip package manager. I have provided the .yml environment file in this repository for those wishing to replicate my environment. This currently is provided under a Windows10 setting.
+The current scripts were developed in the Anaconda Python 3.8 environment. Installing the Prophet model was not as straight forward as I would have hoped, where multiple dependencies had to be manually configured through the Pip package manager. I have provided the .yml environment file in this repository for those wishing to replicate my environment. This currently is provided under a Windows10 setting.
 
 ## Folder structure <a name="Folder-Structure"></a>
 
     .                           # Model using only AQ data and met data [first provided with AURN output]
     ├── images                  # Example images
     ├── Traffic_Data            # Compilation of traffic data and scripts to use this data as additional regressors
+    |.. --EMEP_data             # Output from the regional model EMEP, for years 2018-2019 and March-June 2020 for the COVID19 lockdown
+    |.. --TfGM                  # Transport data for two sites in Manchester, provided by Transport for Greater manchester
     ├── LICENSE
     └── README.md
    
@@ -47,11 +49,11 @@ we provide methods for generating statistical analysis of all site data saved wi
 
 we provide templates for evaluating different approaches of using prophet at individual sites. These include using different historical intervals for model fitting and changing the weight of changepoints detected in the fitting process etc. Again please change the data locations according to your needs.
 
-In the Traffic_Data I have seperated the traffic volume data provided by local transport authorities, and the use of said data in fitting the Prophet model. In the current instance, this includes fitting the model to predict inferred pollutant/traffic volume and then using the same traffic volume data to predict actual concentrations of pollutants. This is because adding traffic data, directly, as an additional regressor to the vanilla model does not improve performance. This is because any traffic apportionment to the measured pollutant signal is already captured in the seasonality displayed in the data. For example, in the Python file
+In the Traffic_Data folder I have seperated the traffic volume data provided by local transport authorities, and the use of said data in fitting the Prophet model. In the current instance, this includes fitting the model to predict inferred pollutant/traffic volume and then using the same traffic volume data to predict actual concentrations of pollutants. This is because adding traffic data, directly, as an additional regressor to the vanilla model does not improve performance. This is because any traffic apportionment to the measured pollutant signal is already captured in the seasonality displayed in the data. For example, in the Python file
 
 - Single_site_combined_Piccadilly.py
 
-I import the traffic data relevant to the AURN site in Manchester Piccadilly and then create a merged dataframe to perform Prophet model fitting.
+I import the traffic data relevant to the AURN site in Manchester Piccadilly and then create a merged dataframe to perform Prophet model fitting. I also include output from the regional model EMEP, supported by Research IT at Manchester University.
 
 ## Contributing<a name="Contributing"></a>
 
