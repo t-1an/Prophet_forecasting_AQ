@@ -13,5 +13,5 @@ Bluetooth Journey Time Passive Sensor: https://www.q-free.com/product/hi-trac-bl
 Key Route Network: https://images.ctfassets.net/nv7y93idf4jq/3BvLFImGfKgQmRLolOHZ3e/06fb54c856bef6393b15fa48c0a77424/KRN_map.png”
 
 
-
+The python script 'Centre_multisite_traffic_type.py' procides an example of analysing multisite data from Manchester within a specific period, focusing on the COVID19 lockdown. The script also generates plots on changes in vehicle types at specific sites between two periods, such as can be seen in the following images.
  
