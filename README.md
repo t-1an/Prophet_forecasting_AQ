@@ -57,12 +57,7 @@ I import the traffic data relevant to the AURN site in Manchester Piccadilly and
 
 ## Contributing<a name="Contributing"></a>
 
-Contributions to these scripts are more than welcome. There are many developments planned for building on the use of Prophet and other models. I am therefore very happy to discuss ideas for improvement and how to add/remove features.  There are two key rules to follow:
-
- - Any addition must include appropriate unit tests
- - Any addition from a scientific process perspective must include a link to a peer-reviewed paper before it is accepted into the public branch.
-
-Please use the issue tracker if you want to notify me of an issue or need support. If you want to contribute, please either create an issue or make a pull request. Alternatively, come and see us in Manchester and/or lets meet for a coffee and a chat!
+Contributions to these scripts are more than welcome. There are many developments planned for building on the use of Prophet and other models. I am therefore very happy to discuss ideas for improvement and how to add/remove features.  Please use the issue tracker if you want to notify me of an issue or need support. If you want to contribute, please either create an issue or make a pull request. Alternatively, come and see us in Manchester and/or lets meet for a coffee and a chat!
 
 ## Code of Conduct<a name="Code-of-Conduct"></a>
 
