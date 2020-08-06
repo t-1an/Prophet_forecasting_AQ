@@ -15,3 +15,8 @@ Key Route Network: https://images.ctfassets.net/nv7y93idf4jq/3BvLFImGfKgQmRLolOH
 
 The python script 'Centre_multisite_traffic_type.py' procides an example of analysing multisite data from Manchester within a specific period, focusing on the COVID19 lockdown. The script also generates plots on changes in vehicle types at specific sites between two periods, such as can be seen in the following images.
  
+
+<p float="left">
+  <img src="../images/City_centre_Daily_HGV_ratios.png" width="400" />
+  <img src="images/Great_Ancoats_HGV_comparison.png" width="400" />
+</p>
