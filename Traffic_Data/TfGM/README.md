@@ -17,6 +17,6 @@ The python script 'Centre_multisite_traffic_type.py' procides an example of anal
  
 
 <p float="left">
-  <img src="../../images/City_centre_Daily_HGV_ratios.png" width="400" />
-  <img src="../../images/Great_Ancoats_HGV_comparison.png" width="400" />
+  <img src="../../images/City_centre_Daily_HGV_ratios.png" width="500" />
+  <img src="../../images/Great_Ancoats_HGV_comparison.png" width="500" />
 </p>
